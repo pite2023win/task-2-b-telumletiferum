@@ -17,16 +17,22 @@ class Event:
 
 
 class Environment:
-    def __init__(self) -> None:
+    def __init__(self):
         self.event = next(self.generate_event())
+        self.weather = self.generate_weather()  # New line
 
     def generate_event(self):
         event_types = ['obstacle', 'straight road', 'pedestrian',
-                       'turn left', 'turn right', 'speed bump', 'traffic light']
+                       'turn left', 'turn right', 'speed bump', 'traffic light',
+                       'sharp turn', 'slippery road', 'heavy traffic']
         while True:
             event_type = random.choice(event_types)
             duration = int(random.gauss(5, 2))
             yield Event(event_type, duration)
+
+    def generate_weather(self):
+        weather_types = ['clear', 'rain', 'snow', 'fog']
+        return random.choice(weather_types)
 
     def process_event(self):
         if self.event is not None:
@@ -44,6 +50,7 @@ class Car:
         self.target_speed = 0
         self.target_wheel_angle = 0
         self.environment = Environment()
+        self.driving_mode = 'comfort'
 
     def change_speed_gradually(self):
         if self.speed < self.target_speed:
@@ -64,19 +71,44 @@ class Car:
         elif self.speed > self.target_speed:
             self.speed -= 20
 
+    def adjust_speed_for_weather(self):
+        if self.environment.weather == 'rain':
+            self.target_speed *= 0.9
+        elif self.environment.weather == 'snow':
+            self.target_speed *= 0.7
+        elif self.environment.weather == 'fog':
+            self.target_speed *= 0.8
+        elif self.environment.weather == 'clear':
+            pass
+
     def set_target_values(self, event: Event):
         if event.name == 'turn left':
             self.target_wheel_angle = -60
+            self.adjust_speed_for_weather()
         elif event.name == 'turn right':
             self.target_wheel_angle = 60
+            self.adjust_speed_for_weather()
         elif event.name == 'obstacle' or event.name == 'pedestrian':
             self.emergency_brake()
+            self.adjust_speed_for_weather()
         elif event.name == 'straight road':
-            self.target_speed = 80
+            self.target_speed = 80 if self.driving_mode != 'eco' else 60
+            self.adjust_speed_for_weather()
         elif event.name == 'speed bump':
             self.target_speed = 30
+            self.adjust_speed_for_weather()
         elif event.name == 'traffic light':
             self.target_speed = 0
+            self.adjust_speed_for_weather()
+        elif event.name == 'sharp turn':
+            self.target_wheel_angle = -90 if random.random() < 0.5 else 90
+            self.adjust_speed_for_weather()
+        elif event.name == 'slippery road':
+            self.target_speed = 40
+            self.adjust_speed_for_weather()
+        elif event.name == 'heavy traffic':
+            self.target_speed = 20
+            self.adjust_speed_for_weather()
 
     def process_event(self, event: Event):
         self.set_target_values(event)
