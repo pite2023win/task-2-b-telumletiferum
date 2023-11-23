@@ -19,7 +19,7 @@ class Event:
 class Environment:
     def __init__(self):
         self.event = next(self.generate_event())
-        self.weather = self.generate_weather()  # New line
+        self.weather = self.generate_weather()
 
     def generate_event(self):
         event_types = ['obstacle', 'straight road', 'pedestrian',
